@@ -13,21 +13,24 @@ int main() {
             input.emplace_back(std::make_pair(cmd[0], value));
     }
 
-    size_t hpos = 0, depth = 0;
+    size_t hpos = 0, depth = 0, aim = 0;
     for (auto i : input) {
         switch(i.first) {
         case 'u':
-            depth -= i.second;
+            //depth -= i.second;
+            aim -= i.second;
             break;
         case 'd':
-            depth += i.second;
+            //depth += i.second;
+            aim += i.second;
             break;
         case 'f':
             hpos += i.second;
+            depth += aim * i.second;
             break;
         default:
             throw "bad";
         }
     }
-    std::cout << hpos * depth << '\n';
+    std::cout << "part1: " << hpos * depth << '\n';
 }
