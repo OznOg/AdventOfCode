@@ -102,5 +102,27 @@ int main() {
 
     std::cout << "Sum of ids is: " << sumOfIds << '\n';
 
+    auto powerOfGame = [] (const Game &game) {
+        unsigned max_r = 0;
+        unsigned max_g = 0;
+        unsigned max_b = 0;
+        for (const auto &s : game) {
+            for (auto &[n, c] : s) {
+               if (c == "red")
+                max_r = std::max(n, max_r);
+               if (c == "green")
+                max_g = std::max(n, max_g);
+               if (c == "blue")
+                max_b = std::max(n, max_b);
+            }
+        }
+        return max_r * max_g * max_b;
+    };
+
+    unsigned sumOfPowers = 0;
+    for (const auto &[i, g] : data) {
+        sumOfPowers += powerOfGame(g);
+    }
+    std::cout << "Sum of powers is: " << sumOfPowers << '\n';
 }
 
