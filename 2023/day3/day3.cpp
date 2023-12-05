@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 
 bool my_isdigit(char ch)
 {
@@ -44,17 +45,14 @@ int main() {
              bool isPartNum = false;
              unsigned digitStr = 0;
              while (my_isdigit(s[j])) {
-                 isPartNum |=
-                     isSymbol(s[j - 1])
-                     or isSymbol(s[j + 1])
-                     or isSymbol(data[i - 1][j]) or isSymbol(data[i - 1][j - 1]) or isSymbol(data[i - 1][j + 1])
-                     or isSymbol(data[i + 1][j]) or isSymbol(data[i + 1][j - 1]) or isSymbol(data[i + 1][j + 1]);
+                for (int k = -1; k < 2; k++)
+                    for (int l = -1; l < 2; l++)
+                        isPartNum |= isSymbol(data[i + k][j + l]);
                  digitStr = digitStr * 10 + (s[j] - '0');
                  j++;
              }
 
              if (isPartNum) {
-               std::cout << digitStr << '\n';
                sumOfParts += digitStr;
              }
 
@@ -63,5 +61,49 @@ int main() {
         
     }
     std::cout << "Sum of parts: " << sumOfParts << '\n';
+    
+    std::map<std::pair<unsigned, unsigned>, std::set<unsigned>> parts;
+    for (int i = 1; i < data.size() - 1; i++) {
+        auto &s = data[i];
+
+        for (int j = 1; j < s.size() - 1; j++) {
+             if (not my_isdigit(s[j]))
+                 continue;
+
+             bool isPartNum = false;
+             unsigned digitStr = 0;
+             std::vector<std::pair<unsigned, unsigned>> starPos;
+             while (my_isdigit(s[j])) {
+                for (int k = -1; k < 2; k++)
+                    for (int l = -1; l < 2; l++) {
+                        isPartNum |= isSymbol(data[i + k][j + l]);
+                        if (data[i + k][j + l] == '*') {
+                            starPos.push_back(std::make_pair(i + k, j + l));
+                        }
+                    }
+                 digitStr = digitStr * 10 + (s[j] - '0');
+                 j++;
+             }
+
+             if (isPartNum) {
+               for (auto &p : starPos)
+                   parts[p].insert(digitStr);
+             }
+        }
+        
+    }
+
+
+    unsigned sumOfRatios = 0;
+    for (auto &[p, v] : parts) {
+       if (v.size() == 2) {
+           unsigned ratio = 1;
+           for (auto &p : v)
+             ratio *= p;
+           sumOfRatios += ratio;
+       }
+
+    }
+    std::cout << "Sume of ratios: " << sumOfRatios << '\n';
 }
 
