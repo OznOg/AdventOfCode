@@ -9,9 +9,9 @@ using Race = std::pair<unsigned, unsigned>;
 using Data = std::vector<Race>;
 
 
-unsigned count_victories(unsigned time, unsigned record) {
-    unsigned count = 0;
-    for (auto push = 1; push < time; push++) {
+unsigned long count_victories(unsigned long time, unsigned long record) {
+    unsigned long count = 0;
+    for (auto push = uint64_t{1}; push < time; push++) {
       if (push * (time - push) > record) {
           count++;
       }
@@ -49,5 +49,9 @@ int main() {
     }
 
     std::cout << "result is: " << mul << '\n';
+    
+    mul = count_victories(58996469lu, 478223210191071lu);
+
+    std::cout << "result #2 is: " << mul << '\n';
 }
 

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <tuple>
 
 
 using Card = std::pair<std::set<unsigned>, std::set<unsigned>>;
