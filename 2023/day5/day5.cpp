@@ -53,14 +53,11 @@ int main() {
        pos += std::string_view("-to-").size();
        map->dest = input.substr(pos, input.find(' ') - pos);
 
-       while (getline(std::cin, input)) {
+       while (getline(std::cin, input) && not input.empty()) {
            Range range;
            auto ss = std::stringstream{input};
            ss >> range.dstart >> range.sstart >> range.length;
            map->ranges.emplace_back(std::move(range));
-
-           if (input.empty())
-             break;
        }
 
        if (std::cin) {
@@ -71,7 +68,7 @@ int main() {
 
    auto to_next = [] (unsigned val, const Map &map) {
       for (auto& r : map.ranges) {
-        if (val >= r.sstart && val <= r.sstart + r.length) {
+        if (val >= r.sstart && val < r.sstart + r.length) {
             return r.dstart + (val - r.sstart);
         }
       }
@@ -86,7 +83,18 @@ int main() {
        }
        location = std::min(location, val);
    }
-   std::cout << location << '\n';
+   std::cout << "Location is: " << location << '\n';
 
+   location = std::numeric_limits<unsigned>::max();
+   for (auto i = 0u; i < seeds.size(); i+=2) {
+       for (auto seed = seeds[i]; seed < seeds[i] + seeds[i + 1]; seed++) {
+           auto val = seed;
+           for (const auto &map : maps) {
+               val = to_next(val, map);
+           }
+           location = std::min(location, val);
+       }
+   }
+   std::cout << "Location #2 is: " << location << '\n';
 }
 
