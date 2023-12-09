@@ -5,6 +5,7 @@
 #include <tuple>
 #include <map>
 #include <set>
+#include <optional>
 
 
 using NodeList = std::map<std::string, std::pair<std::string, std::string>>;
@@ -22,7 +23,9 @@ struct Node {
 struct Sequence {
     const Node *node;
     std::string sequence;
-    std::set<std::string> all_sequences;
+    std::vector<std::string> all_sequences;
+    std::optional<size_t> repeat_idx;
+    std::vector<size_t> z_positions;
 };
 
 
@@ -128,7 +131,8 @@ int main() {
         bool finished = false;
         while (not finished) {
             for (auto &n : next) {
-                n.sequence += n.node->label;
+                n.sequence.append("->" + n.node->label);
+                if (n.node->end_with_z) n.z_positions.push_back(step);
                 if (instructions[step % instructions.size()] == 'R')
                     n.node = n.node->right;
                 else
@@ -138,18 +142,37 @@ int main() {
             if (step % instructions.size() == 0) {
                 finished = true;
                 for (auto &n : next) {
-                    if (not n.all_sequences.contains(n.sequence))
+                    auto it = std::find(n.all_sequences.begin(),
+                              n.all_sequences.end(),
+                              n.sequence);
+                    if (it == n.all_sequences.end()) {
                         finished = false;
-                    n.all_sequences.insert(std::move(n.sequence));
+                        n.all_sequences.emplace_back(std::move(n.sequence));
+                    } else {
+                       if (not n.repeat_idx) {
+                           n.repeat_idx = it -  n.all_sequences.begin();
+                       }
+                    }
                 }
             }
         }
         size_t idx = 0;
         for (auto &n : next) {
-            std::cout << "Idx: " << idx << " sequence is: " << n.all_sequences.size() << '\n';
+            std::cout << "Idx: " << idx << " sequence is: " << n.all_sequences.size() - 1 << " idx: " << n.repeat_idx.value()
+                      << " size: " << (n.all_sequences.size() - n.repeat_idx.value()) * instructions.size()
+                      << " z-positions: " << n.z_positions.front() % (n.all_sequences.size() - 1) << '(' << n.z_positions.size() << ')' << '\n';
             idx++;
         }
+
+        //for (auto &s : next[1].all_sequences) {
+        //    std::cout << s << '\n';
+        //}
+
     }
+
+            std::cout << 135578520ul * instructions.size() << " " << instructions.size() << '\n';
+
+    // Il faut ppcm pout revenir a la meme position
 
 }
 
