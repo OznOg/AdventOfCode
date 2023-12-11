@@ -131,7 +131,7 @@ int main() {
         bool finished = false;
         while (not finished) {
             for (auto &n : next) {
-                n.sequence.append("->" + n.node->label);
+                n.sequence.append(n.node->label);
                 if (n.node->end_with_z) n.z_positions.push_back(step);
                 if (instructions[step % instructions.size()] == 'R')
                     n.node = n.node->right;
@@ -152,6 +152,7 @@ int main() {
                        if (not n.repeat_idx) {
                            n.repeat_idx = it -  n.all_sequences.begin();
                        }
+                       n.sequence.clear();
                     }
                 }
             }
@@ -163,14 +164,48 @@ int main() {
                       << " z-positions: " << n.z_positions.front() % (n.all_sequences.size() - 1) << '(' << n.z_positions.size() << ')' << '\n';
             idx++;
         }
+         
+        //for (auto &s : next[2].all_sequences) {
+        //    std::cout << s << '\n';
+        //}
+
+        std::vector<std::pair<unsigned, unsigned>> gna = {
+            {53, 1},
+            {73, 1 },
+            {47, 1},
+            {61, 1},
+            {71, 1},
+            {59, 1}
+        };
+
+#if 0
+        auto all_zero = [&gna] {
+          for (auto &[t, c] : gna) {
+              if (c % t != 0)
+                  return false;
+          }
+          return true;
+        };
+
+        auto coucount = 1u;
+        while (not all_zero()) {
+          for (auto &[t, c] : gna) {
+              c += 73;
+          }
+          coucount++;
+        }
+        std::cout << coucount << '\n';
+        #endif
 
         //for (auto &s : next[1].all_sequences) {
         //    std::cout << s << '\n';
         //}
 
+          
     }
 
-            std::cout << 135578520ul * instructions.size() << " " << instructions.size() << '\n';
+            std::cout << "instructions: " << instructions.size() << '\n';
+            std::cout << 307ul * 46466159947ul << '\n';
 
     // Il faut ppcm pout revenir a la meme position
 
