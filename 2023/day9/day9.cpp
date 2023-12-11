@@ -9,7 +9,7 @@
 #include <optional>
 
 
-using History = std::vector<unsigned>;
+using History = std::vector<int>;
 
 using Data = std::vector<History>;
 
@@ -20,7 +20,7 @@ int main() {
     auto input = std::string{};
     while (getline(std::cin, input)) {
        auto ss = std::stringstream{input};
-       unsigned val;
+       int val;
        History h;
        while (ss >> val) {
            h.push_back(val); 
@@ -34,8 +34,8 @@ int main() {
       return std::find_if(v.begin(), v.end(), [] (auto &e) { return e != 0; }) == std::end(v);
     };
 
-   auto job = std::map<unsigned, std::vector<History>>{};
-   auto idx = unsigned{0};
+   auto job = std::map<int, std::vector<History>>{};
+   auto idx = int{0};
    for (auto &h : data) {
       auto &j = job[idx]; 
       j.emplace_back(h); // copy original history
@@ -52,10 +52,10 @@ int main() {
    std::cout << job.size() << '\n';
 
 
-   // extrapolate
-   auto sum = unsigned{0};
+   // extrapolate right
+   auto sum = int{0};
    for (auto &[idx, j] : job) {
-      std::optional<unsigned> prev;
+      std::optional<int> prev;
       for (auto it = j.rbegin(); it != j.rend(); it++) {
          if (prev) {
              prev = *prev + it->back();
@@ -66,6 +66,22 @@ int main() {
    }
 
    std::cout << "Sum is: " << sum << '\n';
+   
+   // extrapolate left
+   sum = int{0};
+   for (auto &[idx, j] : job) {
+      std::optional<int> prev;
+      for (auto it = j.rbegin(); it != j.rend(); it++) {
+         if (prev) {
+             prev = it->front() - *prev;
+         } else
+             prev = it->front();
+      }
+      sum += *prev;
+      std::cout << "prev: " << *prev << '\n';
+   }
+
+   std::cout << "Sum #2 is: " << sum << '\n';
    
 
 }
