@@ -25,3 +25,5 @@ add_executable(day8 day8/day8.cpp)
 set_property(TARGET day8 PROPERTY CXX_STANDARD 20)
 
 add_executable(day9 day9/day9.cpp)
+
+add_executable(day10 day10/day10.cpp)
