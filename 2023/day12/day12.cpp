@@ -33,7 +33,9 @@ unsigned matches(const std::string &l, std::vector<unsigned> &group) {
     return g == group;
 }
 
-unsigned do_the_job(const std::string &l, const std::vector<unsigned> &group, unsigned ref = 0, unsigned idx = 0,size_t pos = 0) {
+unsigned do_the_job(std::string &l, const std::vector<unsigned> &group, unsigned ref = 0, unsigned idx = 0,size_t pos = 0) {
+    if (idx >= group.size() && ref != 0)
+        return 0;
 
     if (pos == l.size()) {
         return (idx == group.size() && ref == 0) || idx == group.size() -1 && ref == group[idx];
@@ -52,14 +54,16 @@ unsigned do_the_job(const std::string &l, const std::vector<unsigned> &group, un
         }
         return do_the_job(l, group, 0, idx, pos + 1);
     }
-    if (l[pos] == '?') {
-        auto l2 = l;
-        l2[pos] = '#';
-        auto c = do_the_job(l2, group, ref, idx, pos);
-        l2[pos] = '.';
-        return c + do_the_job(l2, group, ref, idx, pos);
-    }
-    throw "WTF";
+   // if (l[pos] == '?') {
+       // auto l2 = l;
+        l[pos] = '#';
+        auto c = do_the_job(l, group, ref, idx, pos);
+        l[pos] = '.';
+        c += do_the_job(l, group, ref, idx, pos);
+        l[pos] = '?';
+        return c;
+    //}
+    //throw "WTF";
 }
 
 int main() {
@@ -108,7 +112,7 @@ int main() {
    }
 
    for (auto &[l, g] : unfolded_data) {
-       std::cout << "processing: " << l;
+       std::cout << "processing: " << l << std::flush;
        auto count = do_the_job(l, g);
        std::cout << " " << count << '\n';
        sum += count;
