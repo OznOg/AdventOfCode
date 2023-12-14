@@ -33,34 +33,31 @@ unsigned matches(const std::string &l, std::vector<unsigned> &group) {
     return g == group;
 }
 
-unsigned do_the_job(const std::string &l, std::vector<unsigned> &group, std::vector<unsigned> ref = {{0}}, size_t pos = 0) {
-   
+unsigned do_the_job(const std::string &l, const std::vector<unsigned> &group, unsigned ref = 0, unsigned idx = 0,size_t pos = 0) {
+
     if (pos == l.size()) {
-        if (ref.back() == 0)
-            ref.resize(ref.size() - 1);
-        return ref == group;
+        return (idx == group.size() && ref == 0) || idx == group.size() -1 && ref == group[idx];
     }
     
     if (l[pos] == '#') {
-        ref.back()++;
-        if (ref.back() > group[ref.size() - 1]) return 0;
-        return do_the_job(l, group, ref, pos + 1);
+        ref++;
+        if (ref > group[idx]) return 0;
+        return do_the_job(l, group, ref, idx, pos + 1);
     }
     if (l[pos] == '.') {
-        if (ref.back() != 0) {
-            if (ref.back() != group[ref.size() - 1])
+        if (ref != 0) {
+            if (ref != group[idx])
                 return 0;
-            else
-                ref.push_back(0);
+            idx++;
         }
-        return do_the_job(l, group, ref, pos + 1);
+        return do_the_job(l, group, 0, idx, pos + 1);
     }
     if (l[pos] == '?') {
         auto l2 = l;
         l2[pos] = '#';
-        auto c = do_the_job(l2, group, ref, pos);
+        auto c = do_the_job(l2, group, ref, idx, pos);
         l2[pos] = '.';
-        return c + do_the_job(l2, group, ref, pos);
+        return c + do_the_job(l2, group, ref, idx, pos);
     }
     throw "WTF";
 }
