@@ -34,3 +34,5 @@ add_executable(day12 day12/day12.cpp)
 target_compile_options(day12 PUBLIC -O3)
 
 add_executable(day13 day13/day13.cpp)
+
+add_executable(day14 day14/day14.cpp)
