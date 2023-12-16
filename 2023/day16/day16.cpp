@@ -39,25 +39,21 @@ auto next(std::pair<int, int> pos, Dir dir) {
 };
 
 void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir dir, Backlog &log) {
+   // beam goes outside the playground
+   if (pos.first < 0 || pos.second < 0
+       || pos.first >= data.front().size() || pos.second >= data.size())
+     return;
+
    if (std::find_if(log.begin(), log.end(), [&](auto &l) { return l.pos == pos && l.dir == dir; }) == log.end()) {
        log.emplace_back(Log{pos, dir});
-       if (not(pos.first == -1 && pos.second == 0)) // hack for first pos
-           energized[pos.second][pos.first] = '#';
+       energized[pos.second][pos.first] = '#';
    } else {
        return; // already came here that way
    }
-   
-   auto new_pos = next(pos, dir);
 
-   // beam goes outside the playground
-   if (new_pos.first < 0 || new_pos.second < 0
-       || new_pos.first >= data.front().size() || new_pos.second >= data.size())
-     return;
-
-
-   switch (data[new_pos.second][new_pos.first]) {
+   switch (data[pos.second][pos.first]) {
      case '.':
-        return _energize(data, energized, new_pos, dir, log);
+        return _energize(data, energized, next(pos, dir), dir, log);
      case '/':
      {
          auto new_dir = [&] {
@@ -69,7 +65,7 @@ void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir d
                  default: throw "WTF";
              }
          }();
-         return _energize(data, energized, new_pos, new_dir, log);
+         return _energize(data, energized, next(pos, new_dir), new_dir, log);
      }
      break;
      case '\\':
@@ -83,7 +79,7 @@ void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir d
                  default: throw "WTF";
              }
          }();
-         return _energize(data, energized, new_pos, new_dir, log);
+         return _energize(data, energized, next(pos, new_dir), new_dir, log);
      }
      break;
      case '|':
@@ -91,12 +87,12 @@ void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir d
          switch (dir) {
              case Dir::Up:
              case Dir::Down:
-                 return _energize(data, energized, new_pos, dir, log);
+                 return _energize(data, energized, next(pos, dir), dir, log);
 
              case Dir::Right:
              case Dir::Left:
-                 _energize(data, energized, new_pos, Dir::Up, log);
-                 _energize(data, energized, new_pos, Dir::Down, log);
+                 _energize(data, energized, next(pos, Dir::Up), Dir::Up, log);
+                 _energize(data, energized, next(pos, Dir::Down), Dir::Down, log);
              return;
              default: throw "WTF";
          }
@@ -107,12 +103,12 @@ void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir d
          switch (dir) {
              case Dir::Right:
              case Dir::Left:
-                 return  _energize(data, energized, new_pos, dir, log);
+                 return  _energize(data, energized, next(pos, dir), dir, log);
 
              case Dir::Up:
              case Dir::Down:
-                 _energize(data, energized, new_pos, Dir::Right, log);
-                 _energize(data, energized, new_pos, Dir::Left, log);
+                 _energize(data, energized, next(pos, Dir::Right), Dir::Right, log);
+                 _energize(data, energized, next(pos, Dir::Left), Dir::Left, log);
              return;
              default: throw "WTF";
          }
@@ -124,7 +120,7 @@ void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir d
 
 Data energize(const Data &data) {
   auto energized = data;
-  auto pos = std::make_pair(-1, 0);
+  auto pos = std::make_pair(0, 0);
   auto dir = Dir::Right;
   auto log = Backlog{};
   _energize(data, energized, pos, dir, log);
