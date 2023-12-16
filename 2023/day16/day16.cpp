@@ -118,13 +118,56 @@ void _energize(const Data &data, Data &energized, std::pair<int, int> pos, Dir d
    throw "WTF";
 }
 
-Data energize(const Data &data) {
+Data energize_at(const Data &data, std::pair<int, int> pos, Dir dir) {
   auto energized = data;
-  auto pos = std::make_pair(0, 0);
-  auto dir = Dir::Right;
   auto log = Backlog{};
   _energize(data, energized, pos, dir, log);
   return energized;
+}
+
+auto compute_energy(const Data &energized) {
+    auto count = 0u;
+    for (auto &l: energized) {
+  //      std::cout << l << '\n';
+       for (auto &c : l)
+          count += (c == '#');
+    }
+    return count;
+}
+
+auto best_energize(const Data &data) {
+  if (data.size() != data.front().size())
+    throw "WTF";
+
+  auto all_counts = std::vector<std::pair<Log, unsigned>>{};
+  for (auto i = 0; i < data.size() - 1; i++) {
+      {
+          auto log = Log{{i, 0}, Dir::Down};
+          auto energized = energize_at(data, log.pos, log.dir);
+          all_counts.emplace_back(std::make_pair(log, compute_energy(energized)));
+      }
+      {
+          auto log = Log{{0, i}, Dir::Right};
+          auto energized = energize_at(data, log.pos, log.dir);
+          all_counts.emplace_back(std::make_pair(log, compute_energy(energized)));
+      }
+      {
+          auto log = Log{{i, data.size() - 1}, Dir::Up};
+          auto energized = energize_at(data, log.pos, log.dir);
+          all_counts.emplace_back(std::make_pair(log, compute_energy(energized)));
+      }
+      {
+          auto log = Log{{data.size() - 1, i}, Dir::Left};
+          auto energized = energize_at(data, log.pos, log.dir);
+          all_counts.emplace_back(std::make_pair(log, compute_energy(energized)));
+      }
+  }
+
+  return *std::max_element(all_counts.begin(), all_counts.end(), [&](auto &&l, auto &&r) { return l.second < r.second; });
+}
+
+Data energize(const Data &data) {
+    return energize_at(data, {0, 0}, Dir::Right);
 }
 
 int main() {
@@ -145,6 +188,9 @@ int main() {
           count += (c == '#');
     }
     std::cout << "Count of energized: " << count << '\n';
+
+    auto best = best_energize(data);
+    std::cout << "Best count of energized: " << best.second << " " << " x=" << best.first.pos.first << " y=" << best.first.pos.second << '\n';
 }
 
 
