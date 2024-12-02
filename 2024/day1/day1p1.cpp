@@ -29,5 +29,18 @@ int main() {
     }
 
     fmt::print("result is: {}\n", sum);
+
+    unsigned similarity = 0;
+    for (auto l : left) {
+        for (auto r : right) {
+            if (l == r) {
+              similarity += l;
+            }
+            if (l < r) {
+                break;
+            }
+        }
+    }
+    fmt::print("similarity is: {}\n", similarity);
 }
 
