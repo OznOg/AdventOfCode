@@ -44,6 +44,20 @@ auto is_safe(const Report &r) {
     }
 }
 
+
+auto is_safe_p2(const Report &r) {
+   if (is_safe(r))
+     return true;
+
+   for (auto i = 0u; i < r.size(); i++) {
+     auto r2 = r;
+     r2.erase(begin(r2) + i);
+     if (is_safe(r2))
+       return true;
+   }
+   return false;
+}
+
 int main() {
     auto data = std::vector<Report>{};
     auto input = std::string{};
@@ -60,16 +74,25 @@ int main() {
     fmt::print("data is: {}\n", data);
 
 
+   {
+   // p1
     auto count = unsigned{0};
-
-    auto idx = 0;
     for (auto &r : data) {
        if (is_safe(r)) {
          count++;
-         fmt::print("record {} is safe: {}\n", idx, r);
        }
-       idx++;
     }
     fmt::print("safe count is: {}\n", count);
+   }
+   {
+   //p2
+    auto count = unsigned{0};
+    for (auto &r : data) {
+       if (is_safe_p2(r)) {
+         count++;
+       }
+    }
+    fmt::print("safe count is: {}\n", count);
+   }
 }
 
