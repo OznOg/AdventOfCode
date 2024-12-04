@@ -69,11 +69,30 @@ auto rotate(const std::vector<std::string>& input) {
    for (auto i = 0u; i < input.size(); i++) {
      auto line = std::string{};
      for (auto j = 0u; j < input.size(); j++) {
-       line.append(1, input[j][i]); 
+       line.append(1, input[input.size() - j -1][i]); 
      }
      rotated.push_back(line);
    }
    return rotated;
+}
+
+auto countXmas(const std::vector<std::string>& input) {
+   auto count = 0ul;
+
+   for (auto i = 1u; i < input.size() - 1; i++) {
+     for (auto j = 1u; j < input.size() - 1; j++) {
+       if (input[i][j] == 'A'
+           and input[i - 1][j - 1] == 'M'
+           and input[i - 1][j + 1] == 'M'
+           and input[i + 1][j - 1] == 'S'
+           and input[i + 1][j + 1] == 'S') {
+         count++;
+       }
+     }
+     
+   }
+
+   return count;
 }
 
 int main() {
@@ -85,6 +104,7 @@ int main() {
         data.push_back(input);
     }
 
+    { //p1
     // data
     auto reversed = reverse(data);
     auto strided = stride(data);
@@ -104,5 +124,21 @@ int main() {
     sum += count_xmas(reverse_rotated);
 
     fmt::print("sum is {}\n", sum);
+    }
+    { //p2
+
+      auto rotated = data;
+      auto count = countXmas(rotated);
+      rotated = rotate(rotated);
+      count += countXmas(rotated);
+      rotated = rotate(rotated);
+      count += countXmas(rotated);
+      rotated = rotate(rotated);
+      count += countXmas(rotated);
+    
+    fmt::print("sum is {}\n", count);
+
+    }
+
 }
 
