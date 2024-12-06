@@ -141,15 +141,15 @@ int main() {
         auto temp = map;
         temp[j][i] = '#';
 
-        auto history = std::vector<Guard>{};
+        auto history = std::map<Guard::Direction, std::map<unsigned, std::set<unsigned>>>{};
         //fmt::print("Testing\n{}\n", fmt::join(temp, "\n"));
-        history.emplace_back(g);
+        history[g.dir][g.pos.y].insert(g.pos.x);
         while (move(g, temp, path)) {
-          if (std::ranges::find(history, g) != history.end()) {
+          if (history[g.dir][g.pos.y].contains(g.pos.x)) {
             count++;
             break;
           }
-          history.emplace_back(g);
+          history[g.dir][g.pos.y].insert(g.pos.x);
         }
         temp[j][i] = '.';
       }
