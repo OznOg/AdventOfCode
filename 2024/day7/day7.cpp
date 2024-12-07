@@ -6,6 +6,7 @@
 #include <fmt/std.h>
 #include <array>
 #include <algorithm>
+#include <cmath>
 #include <format>
 #include <iostream>
 #include <set>
@@ -29,7 +30,15 @@ struct Equation {
 using Data = std::vector<Equation>;
 
 
+auto exp10(unsigned long long x, unsigned pow) {
+    unsigned long long res = 1;
+    for (auto i = 0; i < pow; i++) {
+       res *= x;
+    }
+    return res;
+}
 
+template <bool p2 = false>
 auto check(const Equation& e) -> bool {
     if (e.numbers.empty()) return false;
 
@@ -39,7 +48,7 @@ auto check(const Equation& e) -> bool {
     if ((rem.value % v) == 0) {
        rem.value /= v;
        if (rem.value == 1 && rem.numbers.empty()) return true;
-       if (check(rem)) {
+       if (check<p2>(rem)) {
            return true;
        }
        rem.value *= v;
@@ -47,9 +56,18 @@ auto check(const Equation& e) -> bool {
     if (rem.value >= v) {
        rem.value -= v;
        if (rem.value == 0 && rem.numbers.empty()) return true;
-       if (check(rem)) {
+       if (check<p2>(rem)) {
            return true;
        }
+       rem.value += v;
+    }
+
+    if constexpr (p2) {
+        auto size = static_cast<long>(std::log10(v) + 1);
+        if ((rem.value % exp10(10, size)) == v) {
+            rem.value = rem.value / (exp10(10, size));
+            return check<p2>(rem);
+        }
     }
     return false;
 }
@@ -61,7 +79,7 @@ int main() {
   while (getline(std::cin, input)) {
       auto eq = Equation{};
       auto pos = input.find(':');
-      eq.value = std::stol(input.substr(0, pos));
+      eq.value = std::stoll(input.substr(0, pos));
 
       auto ss = std::stringstream{input.substr(pos + 1, std::string::npos)};
       unsigned val;
@@ -72,15 +90,26 @@ int main() {
   }
 
 
-  unsigned long long sum = 0u;
-  for (auto &e : data) {
-     if (check(e)) {
-       sum += e.value;
-     }
-     else
+  { //p1
+      unsigned long long sum = 0u;
+      for (auto &e : data) {
+          if (check<>(e)) {
+              sum += e.value;
+          }
+      }
+
+      fmt::print("Sum is: {}\n", sum);
   }
 
-  fmt::print("Sum is: {}\n", sum);
+  { //p2
+      unsigned long long sum = 0u;
+      for (auto &e : data) {
+          if (check<true>(e)) {
+              sum += e.value;
+          }
+      }
 
+      fmt::print("Sum is: {}\n", sum);
+  }
 }
 
