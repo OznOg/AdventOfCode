@@ -35,13 +35,6 @@ struct Guard {
 
 
 auto move(Guard &guard, const Map& map, Map &path) {
-  if (guard.pos.x >= map[0].size()
-      or guard.pos.x < 0
-      or guard.pos.y >=  map.size()
-      or guard.pos.y < 0) {
-    return false;
-  }
-
   path[guard.pos.y][guard.pos.x] = 'X';
 
   switch(guard.dir) {
@@ -78,6 +71,13 @@ auto move(Guard &guard, const Map& map, Map &path) {
         guard.pos.x++;
       }
       break;
+  }
+
+  if (guard.pos.x >= map[0].size()
+      or guard.pos.x < 0
+      or guard.pos.y >=  map.size()
+      or guard.pos.y < 0) {
+    return false;
   }
 
   return true;
@@ -141,15 +141,19 @@ int main() {
         auto temp = map;
         temp[j][i] = '#';
 
-        auto history = std::map<Guard::Direction, std::map<unsigned, std::set<unsigned>>>{};
+        auto history = std::vector<std::vector<std::set<Guard::Direction>>>(map.size());
+        for (auto &l : history) {
+            l.resize(map[0].size());
+        }
+
         //fmt::print("Testing\n{}\n", fmt::join(temp, "\n"));
-        history[g.dir][g.pos.y].insert(g.pos.x);
+        history[g.pos.y][g.pos.x].insert(g.dir);
         while (move(g, temp, path)) {
-          if (history[g.dir][g.pos.y].contains(g.pos.x)) {
+          if (history[g.pos.y][g.pos.x].contains(g.dir)) {
             count++;
             break;
           }
-          history[g.dir][g.pos.y].insert(g.pos.x);
+          history[g.pos.y][g.pos.x].insert(g.dir);
         }
         temp[j][i] = '.';
       }
