@@ -30,26 +30,44 @@ struct Antenna {
 
 using AllAntennas = std::map<unsigned char, std::vector<Antenna>>;
 
-void interfere(std::vector<Antenna> va, Map &map) {
+bool is_out(int x, int y, const Map& map) {
+    return x != std::clamp<int>(x, 0, map[0].size() -1) or
+        y != std::clamp<int>(y, 0, map.size() -1);
+}
+void interfere(std::vector<Antenna> va, Map &map, bool p2 = false) {
+   auto a = va.back();
+   if (p2)
+       map[a.y][a.x] = '#';
+
    if (va.size() <= 1) return;
 
-   auto a = va.back();
    va.pop_back();
    for (auto &i : va) {
-      auto dx = 2 * i.x - a.x;
-      auto dy = 2 * i.y - a.y;
-      auto Dx = -i.x + 2 * a.x;
-      auto Dy = -i.y + 2 * a.y;
-      auto dropd = dx != std::clamp<int>(dx, 0, map[0].size() -1) or
-                   dy != std::clamp<int>(dy, 0, map.size() -1);
-      auto dropD = Dx != std::clamp<int>(Dx, 0, map[0].size() -1) or
-                   Dy != std::clamp<int>(Dy, 0, map.size() -1);
-      if (not dropd)
-          map[dy][dx] = '#';
-      if (not dropD)
-          map[Dy][Dx] = '#';
+      int dx = i.x;
+      int dy = i.y;
+      do {
+          dx += i.x - a.x;
+          dy += i.y - a.y;
+          auto dropd = is_out(dx, dy, map);
+          if (not dropd)
+              map[dy][dx] = '#';
+          else
+            break;
+      } while(p2);
+
+      int Dx = a.x;
+      int Dy = a.y;
+      do {
+          Dx += -i.x + a.x;
+          Dy += -i.y + a.y;
+          auto dropD = is_out(Dx, Dy, map);
+          if (not dropD)
+              map[Dy][Dx] = '#';
+          else
+            break;
+      } while(p2);
    }
-   interfere(va, map);
+   interfere(va, map, p2);
 }
 
 int main() {
@@ -71,15 +89,29 @@ int main() {
 
   fmt::print("{}\n", all);
 
-  for (const auto &[f, a] : all) {
-     interfere(a, map);
+  { //p1
+      for (const auto &[f, a] : all) {
+          interfere(a, map);
+      }
+
+      auto count = 0u;
+      for (const auto &c : fmt::format("{}", fmt::join(map, ""))) {
+          if (c == '#') count++;
+      }
+      fmt::print("{}\n", fmt::join(map, "\n"));
+      fmt::print("Count is: {}\n", count);
   }
-  
-  fmt::print("{}\n", fmt::join(map, "\n"));
-  auto count = 0u;
-  for (const auto &c : fmt::format("{}", fmt::join(map, ""))) {
-      if (c == '#') count++;
+  { // p2
+      for (const auto &[f, a] : all) {
+          interfere(a, map, true);
+      }
+
+      auto count = 0u;
+      for (const auto &c : fmt::format("{}", fmt::join(map, ""))) {
+          if (c == '#') count++;
+      }
+      fmt::print("{}\n", fmt::join(map, "\n"));
+      fmt::print("Count is: {}\n", count);
   }
-  fmt::print("Count is: {}\n", count);
 }
 
