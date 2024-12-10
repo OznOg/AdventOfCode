@@ -27,6 +27,7 @@ struct POI {
    friend auto format_as(const POI& poi) {
        return fmt::format("({}, {})", poi.x, poi.y);
    }
+   unsigned count = 0;
 };
 
 
@@ -46,24 +47,30 @@ auto find_ends(const RawData& data) {
     return std::make_pair(heads, ends);
 }
 
-
-auto score(int x, int y, int val, const std::vector<POI>& ends, RawData& data) {
+template <bool p2>
+auto score(int x, int y, int val, std::vector<POI>& ends, RawData& data) {
    if (val == '9') {
-     data[y][x] = '.'; // invalidate end
-     return 1u;
+     auto it = std::ranges::find_if(ends, [&](auto &e) { return x == e.x and y == e.y; });
+     it->count++;
+     if constexpr (p2) {
+       return 1u;
+     } else {
+       return it->count == 1 ? 1u : 0u;
+     }
    }
 
    unsigned s = 0;
-   if (data[y + 1][x] == val + 1) { s += score(x, y + 1, val + 1, ends, data); }
-   if (data[y - 1][x] == val + 1) { s += score(x, y - 1, val + 1, ends, data); }
-   if (data[y][x + 1] == val + 1) { s += score(x + 1, y, val + 1, ends, data); }
-   if (data[y][x - 1] == val + 1) { s += score(x - 1, y, val + 1, ends, data); }
+   if (data[y + 1][x] == val + 1) { s += score<p2>(x, y + 1, val + 1, ends, data); }
+   if (data[y - 1][x] == val + 1) { s += score<p2>(x, y - 1, val + 1, ends, data); }
+   if (data[y][x + 1] == val + 1) { s += score<p2>(x + 1, y, val + 1, ends, data); }
+   if (data[y][x - 1] == val + 1) { s += score<p2>(x - 1, y, val + 1, ends, data); }
 
    return s;
 }
 
-auto score(const POI& head, const std::vector<POI>& ends, RawData data) {
-  return score(head.x, head.y, '0', ends, data);
+template <bool p2>
+auto score(const POI& head, std::vector<POI> ends, RawData data) {
+  return score<p2>(head.x, head.y, '0', ends, data);
 }
 
 int main() {
@@ -88,9 +95,14 @@ int main() {
 
    auto s = 0u;
    for (auto h : heads) {
-      s += score(h, ends, data);
+      s += score<false>(h, ends, data);
    }
   fmt::print("Score is: {}\n", s);
   
+   s = 0;
+   for (auto h : heads) {
+      s += score<true>(h, ends, data);
+   }
+  fmt::print("Score is: {}\n", s);
 }
 
