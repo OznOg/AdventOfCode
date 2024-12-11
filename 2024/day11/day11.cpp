@@ -27,22 +27,33 @@ unsigned long long my_exp10(unsigned pow) {
     return res;
 }
 
-void blink(Stones &stones) {
-   for (auto it = stones.begin(); it != stones.end(); ++it) {
-      if (*it == 0) {
-        *it = 1;
-        continue;
-      }
-      auto size = static_cast<long>(std::log10(*it) + 1);
-      if ((size % 2) == 0) {
-          auto div = std::lldiv(*it, my_exp10(size / 2));
-          stones.insert(it, div.quot);
-          *it = div.rem;
-          continue;
+using History = std::map<unsigned long long, std::map<unsigned, unsigned long long>>;
+
+
+unsigned long long blink(size_t count, unsigned long long val, History& history) {
+      auto maybe = history[val][count];
+
+      if (maybe != 0) return maybe;
+
+      if (count == 0) return 1;
+
+      if (val == 0) {
+        auto nb = blink(count - 1, 1, history);
+        history[val][count] = nb;
+        return nb;
       }
 
-      *it *= 2024;
-   }
+      auto size = static_cast<long>(std::log10(val) + 1);
+      if ((size % 2) == 0) {
+        auto div = std::lldiv(val, my_exp10(size / 2));
+        auto nb = blink(count - 1, div.quot, history) + blink(count - 1, div.rem, history);
+        history[val][count] = nb;
+        return nb;
+      }
+
+      auto nb = blink(count - 1, val * 2024, history);
+      history[val][count] = nb;
+      return nb;
 }
 
 int main() {
@@ -59,9 +70,12 @@ int main() {
 
   fmt::print("Data is: {}\n", data);
 
-  for (auto i = 0; i < 25; i++) {
-    blink(data);
+  auto history = History{};
+  unsigned long long sum = 0;
+
+  for (auto s : data) {
+    sum += blink(75, s, history);
   }
-  fmt::print("After 25 blink: {}\n", data.size());
+  fmt::print("After 75 blink: {}\n", sum);
 }
 
