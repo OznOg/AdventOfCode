@@ -79,6 +79,58 @@ auto  make_regions(const Map& _map) {
    return regions;
 }
 
+size_t count_vector(std::vector<int> v) {
+   size_t count = 0;
+
+   std::ranges::sort(v);
+   auto idx = -12;
+   for (const auto &e : v) {
+      if (e != idx) {
+         count++;
+         idx = e;
+      }
+      idx += 1;
+   }
+  return count;
+}
+
+auto compute_sides(const Region& r, const Map& map) {
+    std::map<int, std::map<int, std::vector<int>>> sides_up;
+    std::map<int, std::map<int, std::vector<int>>> sides_down;
+    std::map<int, std::map<int, std::vector<int>>> sides_left;
+    std::map<int, std::map<int, std::vector<int>>> sides_right;
+
+    for (auto g : r.gardens) {
+         if (map[g.y][g.x - 1] != r.plant) sides_left[g.x][g.x - 1].push_back(g.y);
+         if (map[g.y][g.x + 1] != r.plant) sides_right[g.x][g.x + 1].push_back(g.y);
+         if (map[g.y - 1][g.x] != r.plant) sides_up[g.y][g.y - 1].push_back(g.x);
+         if (map[g.y + 1][g.x] != r.plant) sides_down[g.y][g.y + 1].push_back(g.x);
+    }
+    
+    auto size = 0u;
+    for (auto &[i, m]: sides_up) {
+      for (auto [j, v] : m) {
+        size += count_vector(v);
+      }
+    }
+    for (auto &[i, m] : sides_down) {
+      for (auto [j, v] : m) {
+        size += count_vector(v);
+      }
+    }
+    for (auto &[i, m]: sides_left) {
+      for (auto [j, v] : m) {
+        size += count_vector(v);
+      }
+    }
+    for (auto &[i, m]: sides_right) {
+      for (auto [j, v] : m) {
+        size += count_vector(v);
+      }
+    }
+    return size;
+}
+
 int main() {
 
   auto map = Map{};
@@ -100,11 +152,16 @@ int main() {
   fmt::print("Regions are:\n{}\n", fmt::join(regions, "\n   "));
 
   unsigned long long sum = 0;
+  unsigned long long sum2 = 0;
   for (auto r : regions) {
      sum += r.gardens.size() * r.fence_length;
+     auto sides = compute_sides(r, map);
+     //fmt::print("Sides for {}: {}\n", std::string(1, r.plant), sides);
+     sum2 += sides * r.gardens.size();
   }
 
   fmt::print("Sum is: {}\n", sum);
+  fmt::print("Sum2 is: {}\n", sum2);
   
 }
 
