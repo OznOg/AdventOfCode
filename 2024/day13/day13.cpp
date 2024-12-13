@@ -44,39 +44,34 @@ struct Machine {
 using History = std::map<unsigned, std::map<unsigned, std::optional<std::optional<size_t>>>>;
 std::optional<size_t> play(const Machine &machine, const size_t curr_token, Pos pos, History& h) {
 
-    if (h[pos.x][pos.y]) {
-        return *h[pos.x][pos.y];
-    }
-    
-    if (pos.x > machine.prize.x
-       or pos.y > machine.prize.y) {
-       h[pos.x][pos.y] = std::nullopt;
-       return {};
-    }
-    
-    if (pos.x == machine.prize.x
-       and pos.y == machine.prize.y) {
-       h[pos.x][pos.y] = curr_token;
-       return curr_token;
-    }
 
-    auto posA = pos;
-    posA.x += machine.A.x;
-    posA.y += machine.A.y;
-    auto withA = play(machine, curr_token + 3, posA, h);
+    double Py = machine.prize.y;
+    double Px = machine.prize.x;
+    double ax = machine.A.x;
+    double ay = machine.A.y;
+    double bx = machine.B.x;
+    double by = machine.B.y;
+    //Px = ax * n + bx * m;
+    //Py = ay * n + by * m;
 
-    auto posB = pos;
-    posB.x += machine.B.x;
-    posB.y += machine.B.y;
-    auto withB = play(machine, curr_token + 1, posB, h);
+    //n = (Px - bx * m) / ax
 
-    auto res = withA;
+    //Py = ay * (Px - bx * m) / ax + by * m;
+    //Py = ay/ax * Px - ay/ax * bx * m + by * m;
+    //Py = ay/ax * Px + (by - ay/ax * bx) * m;
 
-    if (withB) {
-     if (!res or *res > *withB) res = withB;
+    double m = (Py - (ay / ax) * Px) / (by - (ay/ax) * bx);
+    double n = (Px - bx * m) / ax;
+
+    //fmt::print("m={} n={} c={}, {} {}\n", m, n, 3 * n + m, ax * n + bx * m, ay * n + by * m);
+
+    auto intm = std::llround(m);
+    auto intn = std::llround(n);
+    if (machine.prize.x == machine.A.x * intn + machine.B.x * intm
+        and machine.prize.y == machine.A.y * intn + machine.B.y * intm) {
+        return intm + intn * 3;
     }
-    h[pos.x][pos.y] = res;
-    return res;
+    return {};
 }
 
 int main() {
@@ -110,15 +105,28 @@ int main() {
   fmt::print("Map is:\n{}\n", fmt::join(machines, "\n"));
   
 
-  unsigned long long sum = 0;
-  for (auto &m : machines) {
-    auto pos = Pos{};
-    History h;
-    auto opt = play(m, 0, pos, h);
-    //fmt::print("Play= {}\n", opt);
-    sum += opt.value_or(0);
-  }
-  fmt::print("Sum is= {}\n", sum);
-  
+ { // p1
+     unsigned long long sum = 0;
+     for (auto &m : machines) {
+         auto pos = Pos{};
+         History h;
+         auto opt = play(m, 0, pos, h);
+         //fmt::print("Play= {}\n", opt);
+         sum += opt.value_or(0);
+     }
+     fmt::print("Sum is= {}\n", sum);
+ }
+ { // p2
+     unsigned long long sum = 0;
+     for (auto &m : machines) {
+         auto pos = Pos{};
+         History h;
+         m.prize.x += 10000000000000;
+         m.prize.y += 10000000000000;
+         auto opt = play(m, 0, pos, h);
+         sum += opt.value_or(0);
+     }
+     fmt::print("Sum is= {}\n", sum);
+}
 }
 
