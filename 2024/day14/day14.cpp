@@ -41,14 +41,33 @@ using Map = std::vector<std::vector<unsigned>>;
 
 
 void move(Robot& robot, size_t seconds, Map& map) {
+    map[robot.pos.y][robot.pos.x]--;
     robot.pos.x += robot.v.x * seconds;
     robot.pos.y += robot.v.y * seconds;
     robot.pos.x %= map.front().size();
     robot.pos.y %= map.size();
+    map[robot.pos.y][robot.pos.x]++;
 }
 
 void move(std::vector<Robot>& robots, size_t seconds, Map &map) {
     std::ranges::for_each(robots, [seconds, &map](auto &r) { move(r, seconds, map); });
+}
+
+bool has_voisin(const Robot&r, const Map& map) {
+     
+     for (auto i = -1; i < 2; i++) {
+         for (auto j = -1; j < 2; j++) {
+             if (i == 0 && j == 0) continue;
+             if (map[(r.pos.y + j) % map.size()][(r.pos.x + i) % map.front().size()] > 0) return true;
+         }
+     }
+   return false; 
+}
+
+size_t nb_voisin(const std::vector<Robot>& robots, const Map &map) {
+    auto count = 0; 
+    std::ranges::for_each(robots, [&map, &count](auto &r) { if (has_voisin(r, map)) count++; });
+    return count;
 }
 
 int main() {
@@ -92,43 +111,75 @@ int main() {
      }
      });
 
-  auto seconds = 100;
-  move(robots, seconds, map);
-  fmt::print("Robots are:\n{}\n", fmt::join(robots, "\n"));
-  
   std::ranges::for_each(robots, [&map](auto &r) { 
-     map[r.pos.y][r.pos.x]++;
-  });
-  fmt::print("MAp:\n{}\n", fmt::join(map, "\n"));
+          map[r.pos.y][r.pos.x]++;
+          });
+  auto time = 0;
+  auto max_t = 0;
+  auto max_nb = 0;
+  auto ref_map = map;
+
+  // Now test the number of neighbour of each move until we get back at the
+  // start position
+  do
+  {
+      auto seconds = 1;
+      move(robots, seconds, map);
+      time++;
+      //fmt::print("Robots are:\n{}\n", fmt::join(robots, "\n"));
+      auto nb = nb_voisin(robots, map);
+      
+      if (nb > max_nb) {
+          max_t = time;
+          max_nb = nb;
+      }
+      fmt::print("max t{} {} ||  t={} {}\n", max_t, max_nb, time, nb);
+  } while (ref_map != map);
+
+  // correct time is the one that maximize the number of neighbour
+  move(robots, max_t, map);
 
 
-  auto q1 = 0u;
-  auto q2 = 0u;
-  auto q3 = 0u;
-  auto q4 = 0u;
-  
-  for (auto y = 0; y < map.size() / 2; y++) {
-      for (auto x = 0; x < map.front().size() / 2; x++) {
-          q1 += map[y][x];
+  // pretty display the Christmas tree
+  for (auto y = 0; y < map.size(); y++) {
+      for (auto x = 0; x < map.front().size(); x++) {
+          if (map[y][x] > 0) {
+             fmt::print("#");
+          } else {
+             fmt::print(" ");
+          }
       }
+      fmt::print("\n");
   }
-  for (auto y = map.size() / 2 + 1; y < map.size(); y++) {
-      for (auto x = 0; x < map.front().size() / 2; x++) {
-          q2 += map[y][x];
-      }
-  }
-  for (auto y = 0; y < map.size() / 2; y++) {
-      for (auto x = map.front().size() / 2 + 1; x < map.front().size(); x++) {
-          q3 += map[y][x];
-      }
-  }
-  for (auto y = map.size() / 2 + 1; y < map.size(); y++) {
-      for (auto x = map.front().size() / 2 + 1; x < map.front().size(); x++) {
-          q4 += map[y][x];
-      }
-  }
-  fmt::print("{} {} {} {}\n", q1, q2, q3, q4);
-  fmt::print("Safety factor is: {}\n", q1 * q2 * q3 *q4);
+  fmt::print("\n");
+
+ // auto q1 = 0u;
+ // auto q2 = 0u;
+ // auto q3 = 0u;
+ // auto q4 = 0u;
+ // 
+ // for (auto y = 0; y < map.size() / 2; y++) {
+ //     for (auto x = 0; x < map.front().size() / 2; x++) {
+ //         q1 += map[y][x];
+ //     }
+ // }
+ // for (auto y = map.size() / 2 + 1; y < map.size(); y++) {
+ //     for (auto x = 0; x < map.front().size() / 2; x++) {
+ //         q2 += map[y][x];
+ //     }
+ // }
+ // for (auto y = 0; y < map.size() / 2; y++) {
+ //     for (auto x = map.front().size() / 2 + 1; x < map.front().size(); x++) {
+ //         q3 += map[y][x];
+ //     }
+ // }
+ // for (auto y = map.size() / 2 + 1; y < map.size(); y++) {
+ //     for (auto x = map.front().size() / 2 + 1; x < map.front().size(); x++) {
+ //         q4 += map[y][x];
+ //     }
+ // }
+ // fmt::print("{} {} {} {}\n", q1, q2, q3, q4);
+ // fmt::print("Safety factor is: {}\n", q1 * q2 * q3 *q4);
 }
 
 
