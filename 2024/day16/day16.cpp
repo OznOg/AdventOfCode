@@ -29,15 +29,16 @@ struct Pos {
 using Map = std::vector<std::string>;
 
 struct Reindeer {
+  
+  enum class Direction { N, E, S, O };
 
   bool operator==(const Reindeer&) const = default;
-
-  enum class Direction { N, E, S, O };
 
   Direction dir;
 
   Pos  pos;
-  
+
+  unsigned score = 0;
 };
 
 std::string format_as(const Reindeer::Direction &dir) {
@@ -198,7 +199,7 @@ auto format_as(const Reindeer &r) {
 //  return wide_map;
 //}
 //
-using History = std::map<unsigned long long, std::map<unsigned, std::optional<unsigned long long>>>;
+using History = std::map<unsigned long long, std::map<unsigned, std::map<Reindeer::Direction, unsigned>>>;
 
 //auto move(Reindeer &reindeer, const Map& map, unsigned long long cost, History &history) {
 //
@@ -259,69 +260,128 @@ using History = std::map<unsigned long long, std::map<unsigned, std::optional<un
 //  return true;
 //}
 
-std::optional<unsigned> crawl_region(Reindeer &r, Map &map, History& history) {
-  switch(r.dir) {
-    case Reindeer::Direction::N:
-      if (map[r.pos.y][r.pos.x + 1] != '#') {
-         r.dir = Reindeer::Direction::E;
-         r.pos.x++;
-      } else if (map[r.pos.y - 1][r.pos.x] != '#') {
-         r.pos.y--;
-      } else if (map[r.pos.y][r.pos.x - 1] != '#') {
-         r.dir = Reindeer::Direction::O;
-         r.pos.x--;
-      } else {
-         r.dir = Reindeer::Direction::S;
-         r.pos.y++;
-      }
-      break;
+std::vector<unsigned> sc;
 
-    case Reindeer::Direction::O:
-      if (map[r.pos.y - 1][r.pos.x] != '#') {
-         r.dir = Reindeer::Direction::N;
-         r.pos.y--;
-      } else if (map[r.pos.y][r.pos.x - 1] != '#') {
-         r.pos.x--;
-      } else if (map[r.pos.y + 1][r.pos.x] != '#') {
-         r.dir = Reindeer::Direction::S;
-         r.pos.y++;
-      } else {
-         r.dir = Reindeer::Direction::E;
-         r.pos.x++;
-      }
-      break;
+std::vector<Reindeer> crawl_region(Reindeer &r, Map &map, History& history) {
 
-    case Reindeer::Direction::S:
-      if (map[r.pos.y][r.pos.x - 1] != '#') {
-         r.dir = Reindeer::Direction::O;
-         r.pos.x--;
-      } else if (map[r.pos.y + 1][r.pos.x] != '#') {
-         r.pos.y++;
-      } else if (map[r.pos.y][r.pos.x + 1] != '#') {
-         r.dir = Reindeer::Direction::E;
-         r.pos.x++;
-      } else {
-         r.dir = Reindeer::Direction::N;
-         r.pos.y--;
-      }
-      break;
+    auto next = std::vector<Reindeer>{};
 
-    case Reindeer::Direction::E:
-      if (map[r.pos.y + 1][r.pos.x] != '#') {
-         r.dir = Reindeer::Direction::S;
-         r.pos.y++;
-      } else if (map[r.pos.y][r.pos.x + 1] != '#') {
-         r.pos.x++;
-      } else if (map[r.pos.y - 1][r.pos.x] != '#') {
-         r.dir = Reindeer::Direction::N;
-         r.pos.y--;
-      } else {
-         r.dir = Reindeer::Direction::O;
-         r.pos.x--;
-      }
-      break;
-  }
-   return {};
+    if (map[r.pos.y][r.pos.x] == 'E') {
+       fmt::print("===============>{}\n", r.score);
+       sc.push_back(r.score);
+    }
+    switch(r.dir) {
+        case Reindeer::Direction::N:
+            if (map[r.pos.y][r.pos.x + 1] != '#') {
+                auto rn = r;
+                rn.pos.x++;
+                rn.dir = Reindeer::Direction::E;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            } 
+            if (map[r.pos.y - 1][r.pos.x] != '#') {
+                auto rn = r;
+                rn.pos.y--;
+                rn.dir = Reindeer::Direction::N;
+                rn.score += 1;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            if (map[r.pos.y][r.pos.x - 1] != '#') {
+                auto rn = r;
+                rn.pos.x--;
+                rn.dir = Reindeer::Direction::O;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            break;
+
+        case Reindeer::Direction::O:
+            if (map[r.pos.y - 1][r.pos.x] != '#') {
+                auto rn = r;
+                rn.pos.y--;
+                rn.dir = Reindeer::Direction::N;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            if (map[r.pos.y][r.pos.x - 1] != '#') {
+                auto rn = r;
+                rn.pos.x--;
+                rn.dir = Reindeer::Direction::O;
+                rn.score += 1;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            if (map[r.pos.y + 1][r.pos.x] != '#') {
+                auto rn = r;
+                rn.pos.y++;
+                rn.dir = Reindeer::Direction::S;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            break;
+
+        case Reindeer::Direction::S:
+            if (map[r.pos.y][r.pos.x - 1] != '#') {
+                auto rn = r;
+                rn.dir = Reindeer::Direction::O;
+                rn.pos.x--;
+                rn.score += 1001;
+                rn.dir = Reindeer::Direction::O;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            if (map[r.pos.y + 1][r.pos.x] != '#') {
+                auto rn = r;
+                rn.pos.y++;
+                rn.dir = Reindeer::Direction::S;
+                rn.score += 1;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            } 
+            if (map[r.pos.y][r.pos.x + 1] != '#') {
+                auto rn = r;
+                rn.pos.x++;
+                rn.dir = Reindeer::Direction::E;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            break;
+
+        case Reindeer::Direction::E:
+            if (map[r.pos.y + 1][r.pos.x] != '#') {
+                auto rn = r;
+                rn.pos.y++;
+                rn.dir = Reindeer::Direction::S;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            if (map[r.pos.y][r.pos.x + 1] != '#') {
+                auto rn = r;
+                rn.pos.x++;
+                rn.dir = Reindeer::Direction::E;
+                rn.score += 1;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            if (map[r.pos.y - 1][r.pos.x] != '#') {
+                auto rn = r;
+                rn.pos.y--;
+                rn.dir = Reindeer::Direction::N;
+                rn.score += 1001;
+                if (!history[rn.pos.y][rn.pos.x][rn.dir] or history[rn.pos.y][rn.pos.x][rn.dir] > rn.score)
+                    next.emplace_back(rn);
+            }
+            break;
+    }
+    history[r.pos.y][r.pos.x][r.dir] = r.score;
+    return next;
 }
 
 int main() {
@@ -347,9 +407,18 @@ int main() {
   fmt::print("Map:\n{}\n", fmt::join(map, "\n"));
   History h;
 
-  while (map[reindeer.pos.y][reindeer.pos.x] != 'E') {
-    crawl_region(reindeer, map, h);
+  auto v = crawl_region(reindeer, map, h);
+  while (!v.empty()) {
+     auto v2 = std::vector<Reindeer>{}; 
+    for (auto &r : v) {
+        auto v3 = crawl_region(r, map, h);
+        v2.insert(v2.end(), v3.begin(), v3.end());
+    }
+    v = v2;
   }
+
+  fmt::print("Sc:\n{}\n", std::ranges::min(sc));
+  //fmt::print("History:\n{}\n", fmt::join(h, "\n"));
 }
 
 
