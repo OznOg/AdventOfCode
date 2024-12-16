@@ -259,87 +259,69 @@ using History = std::map<unsigned long long, std::map<unsigned, std::optional<un
 //  return true;
 //}
 
-std::optional<unsigned> crawl_region(int x, int y, unsigned cost, Reindeer::Direction dir, Map &map, History& history) {
-   if (map[y][x] == '#') {
-     return {};
-   }
-   if (map[y][x] == 'E') {
-       if (history[y][x] and *history[y][x] > cost) history[y][x] = cost;
-       return cost;
-   }
-
-   if (history[y][x]) return history[y][x];
-
-
-  auto v = std::vector<unsigned>{};
-  auto r = std::optional<unsigned>{};
-
-  auto update_history = [&] {
-  if (v.empty()) 
-   history[y][x] = {};
-  else
-   history[y][x] = std::ranges::min(v);
-   };
-
-  switch(dir) {
+std::optional<unsigned> crawl_region(Reindeer &r, Map &map, History& history) {
+  switch(r.dir) {
     case Reindeer::Direction::N:
-      {
-        r = crawl_region(x + 1, y, cost + 1000, Reindeer::Direction::E, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x - 1, y, cost + 1000, Reindeer::Direction::O, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x, y - 1, cost + 1, Reindeer::Direction::N, map, history);
-        if (r) v.push_back(*r);
-        update_history();
+      if (map[r.pos.y][r.pos.x + 1] != '#') {
+         r.dir = Reindeer::Direction::E;
+         r.pos.x++;
+      } else if (map[r.pos.y - 1][r.pos.x] != '#') {
+         r.pos.y--;
+      } else if (map[r.pos.y][r.pos.x - 1] != '#') {
+         r.dir = Reindeer::Direction::O;
+         r.pos.x--;
+      } else {
+         r.dir = Reindeer::Direction::S;
+         r.pos.y++;
       }
       break;
+
     case Reindeer::Direction::O:
-      {
-        r = crawl_region(x - 1, y, cost + 1, Reindeer::Direction::O, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x, y + 1, cost + 1000, Reindeer::Direction::S, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x, y - 1, cost + 1000, Reindeer::Direction::N, map, history);
-        if (r) v.push_back(*r);
-        update_history();
+      if (map[r.pos.y - 1][r.pos.x] != '#') {
+         r.dir = Reindeer::Direction::N;
+         r.pos.y--;
+      } else if (map[r.pos.y][r.pos.x - 1] != '#') {
+         r.pos.x--;
+      } else if (map[r.pos.y + 1][r.pos.x] != '#') {
+         r.dir = Reindeer::Direction::S;
+         r.pos.y++;
+      } else {
+         r.dir = Reindeer::Direction::E;
+         r.pos.x++;
       }
       break;
 
     case Reindeer::Direction::S:
-      {
-        r = crawl_region(x + 1, y, cost + 1000, Reindeer::Direction::E, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x - 1, y, cost + 1000, Reindeer::Direction::O, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x, y + 1, cost + 1, Reindeer::Direction::S, map, history);
-        if (r) v.push_back(*r);
-        update_history();
+      if (map[r.pos.y][r.pos.x - 1] != '#') {
+         r.dir = Reindeer::Direction::O;
+         r.pos.x--;
+      } else if (map[r.pos.y + 1][r.pos.x] != '#') {
+         r.pos.y++;
+      } else if (map[r.pos.y][r.pos.x + 1] != '#') {
+         r.dir = Reindeer::Direction::E;
+         r.pos.x++;
+      } else {
+         r.dir = Reindeer::Direction::N;
+         r.pos.y--;
       }
       break;
+
     case Reindeer::Direction::E:
-      {
-        r = crawl_region(x + 1, y, cost + 1, Reindeer::Direction::E, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x, y + 1, cost + 1000, Reindeer::Direction::S, map, history);
-        if (r) v.push_back(*r);
-        update_history();
-        r = crawl_region(x, y - 1, cost + 1000, Reindeer::Direction::N, map, history);
-        if (r) v.push_back(*r);
-        update_history();
+      if (map[r.pos.y + 1][r.pos.x] != '#') {
+         r.dir = Reindeer::Direction::S;
+         r.pos.y++;
+      } else if (map[r.pos.y][r.pos.x + 1] != '#') {
+         r.pos.x++;
+      } else if (map[r.pos.y - 1][r.pos.x] != '#') {
+         r.dir = Reindeer::Direction::N;
+         r.pos.y--;
+      } else {
+         r.dir = Reindeer::Direction::O;
+         r.pos.x--;
       }
       break;
   }
-
-  update_history();
-
-   return history[y][x];
+   return {};
 }
 
 int main() {
@@ -364,7 +346,10 @@ int main() {
   fmt::print("Reindeer:\n{}\n", reindeer);
   fmt::print("Map:\n{}\n", fmt::join(map, "\n"));
   History h;
-  crawl_region(reindeer.pos.x, reindeer.pos.y, 0, reindeer.dir, map, h);
+
+  while (map[reindeer.pos.y][reindeer.pos.x] != 'E') {
+    crawl_region(reindeer, map, h);
+  }
 }
 
 
