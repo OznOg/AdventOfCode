@@ -268,7 +268,9 @@ std::vector<Reindeer> crawl_region(Reindeer &r, Map &map, History& history) {
 
     if (map[r.pos.y][r.pos.x] == 'E') {
        fmt::print("===============>{}\n", r.score);
+       history[r.pos.y][r.pos.x][r.dir] = r.score;
        sc.push_back(r.score);
+       return {};
     }
     switch(r.dir) {
         case Reindeer::Direction::N:
@@ -418,7 +420,7 @@ int main() {
   }
 
   fmt::print("Sc:\n{}\n", std::ranges::min(sc));
-  //fmt::print("History:\n{}\n", fmt::join(h, "\n"));
+  fmt::print("History:\n{}\n", fmt::join(h, "\n"));
 }
 
 
