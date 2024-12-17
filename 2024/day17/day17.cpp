@@ -19,17 +19,12 @@
 #include <regex>
 
 
-auto exp2(unsigned x) {
-  unsigned v = 1;
-  while (x) {
-     v *= 2;
-     x--;
-  }
-  return v;
+inline auto exp2(unsigned x) {
+  return 1ull << x;
 }
 
 struct Computer {
-  long long A = 0, B = 0, C = 0;
+  unsigned long long A = 0, B = 0, C = 0;
 
   unsigned ip = 0;
 
@@ -64,6 +59,10 @@ struct Computer {
       throw "WTF";
   }
 
+  void run_special() {
+    while (run_one() and output.size() <= prog.size() * 2)
+      ;
+  }
   void run() {
     while (run_one())
       ;
@@ -117,6 +116,22 @@ struct Computer {
   }
 };
 
+
+std::optional<unsigned long long> force(const Computer &cref, unsigned long long A, const int idx, std::vector<unsigned> output) {
+  if (idx < 0) return A;
+  A <<= 3;
+  for (auto a = 0; a <= 7; a++) {
+    auto computer = cref;
+    computer.A = A | a;
+    computer.run_special();
+    if (std::equal(output.begin() + idx, output.end(), computer.output.begin())) {
+      auto r = force(cref, A | a, idx - 1, output);
+      if (r) return r;
+    }
+  }
+  return {};
+}
+
 int main() {
 
   auto computer = Computer{};
@@ -143,9 +158,26 @@ int main() {
     input = sm.suffix();
   }
 
+  const auto cref = computer;
+
   fmt::print("Computer is:\n{}\n", computer);
   computer.run();
   fmt::print("Computer is:\n{}\n", computer);
+  fmt::print("Output is:\n{}\n", fmt::join(computer.output, ","));
+
+  auto prog = std::vector<unsigned>{};
+  for (auto i : computer.prog) {
+     prog.emplace_back(i.code); 
+     prog.emplace_back(i.op); 
+  }
+
+  fmt::print("Prog is:\n{}\n", fmt::join(prog, ","));
+
+  auto A = force(cref, 0, prog.size() - 1,  prog);
+  fmt::print("A is:\n{}\n", A);
+  computer = cref;
+  computer.A = *A;
+  computer.run_special();
   fmt::print("Output is:\n{}\n", fmt::join(computer.output, ","));
 }
 
