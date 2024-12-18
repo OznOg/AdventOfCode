@@ -30,6 +30,8 @@ using Map = std::vector<std::string>;
 
 using List = std::vector<Pos>;
 
+using Scores = std::map<unsigned, std::map<unsigned, std::optional<unsigned>>>;
+
 std::optional<size_t> find_path(int x, int y, size_t score, Map& map, const Pos& end) {
    if (map[y][x] == '#' or map[y][x] == 'V') return {};
    if (y == end.y && x == end.x) return score;
@@ -48,6 +50,33 @@ std::optional<size_t> find_path(int x, int y, size_t score, Map& map, const Pos&
    return res; 
 }
 
+auto find_best_around(int x, int y, Scores& scores) {
+   
+   auto res = std::optional<size_t>{};
+   for (auto &score : { scores[y][x + 1], scores[y][x - 1], scores[y + 1][x], scores[y - 1][x] }) {
+       if (not res) res = score;
+       if (res and score and *res > *score) res = score;
+   }
+   return res;
+}
+
+auto diktra(const Map& map, Scores& scores) {
+  scores[1][1] = 0;
+
+  for (auto i = 1; i < map.size() * 2; i++) {
+     for (auto x = 0; x <= i; x++) {
+       auto y = i - x;
+       if (y >= map.size() or x >= map.size()) continue;
+       if (map[y][x] != '#' && not scores[y][x]) {
+         auto best = find_best_around(x, y, scores);
+         if (best)
+           scores[y][x] = *best + 1;
+       }
+     }
+  }
+}
+
+
 int main() {
 
   auto list = List{};
@@ -60,7 +89,7 @@ int main() {
   }
   fmt::print("List is:\n{}\n", list);
 
-  auto map_size = 70;
+  auto map_size = 71;
   auto limit = 1024;
   if (list.size() == 25) {
       map_size = 7;
@@ -83,8 +112,20 @@ int main() {
   //map[map_size - 2][map_size - 2] = 'O';
   fmt::print("Map is:\n{}\n", fmt::join(map, "\n"));
 
- auto size = find_path(1, 1, 0, map, Pos{map_size - 2, map_size -2 });
- fmt::print("Size {}\n", size);
+  Scores scores;
+  while(not scores[map_size - 2][map_size - 2])
+    diktra(map, scores);
+
+
+// auto size = find_path(1, 1, 0, map, Pos{map_size - 2, map_size -2 });
+  fmt::print("Scores are:\n{}\n", fmt::join(scores, "\n"));
+
+  for (auto&[y, mY] : scores)
+    for (auto&[x, s] : mY)
+       if (s) map[y][x] = (*s % 10) + '0';
+  fmt::print("Map is:\n{}\n", fmt::join(map, "\n"));
+
+  fmt::print("Size {}\n", scores[map_size - 2][map_size - 2]);
 }
 
 
