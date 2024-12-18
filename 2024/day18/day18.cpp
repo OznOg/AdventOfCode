@@ -32,6 +32,8 @@ using List = std::vector<Pos>;
 
 using Scores = std::map<unsigned, std::map<unsigned, std::optional<unsigned>>>;
 
+// direct find_path, works on small maze but not on large one because it crawls
+// the whole map (and as the map has very large areas without walls)
 std::optional<size_t> find_path(int x, int y, size_t score, Map& map, const Pos& end) {
    if (map[y][x] == '#' or map[y][x] == 'V') return {};
    if (y == end.y && x == end.x) return score;
@@ -60,20 +62,27 @@ auto find_best_around(int x, int y, Scores& scores) {
    return res;
 }
 
-auto diktra(const Map& map, Scores& scores) {
+// This implementation works by updating values on a diagonal; As there may be
+// some places behind walls that are unreachable on first pass, this needs to
+// be called again and again until it returns false
+bool dijkstra(const Map& map, Scores& scores) {
   scores[1][1] = 0;
 
+  auto res = false;
   for (auto i = 1; i < map.size() * 2; i++) {
      for (auto x = 0; x <= i; x++) {
        auto y = i - x;
        if (y >= map.size() or x >= map.size()) continue;
        if (map[y][x] != '#' && not scores[y][x]) {
          auto best = find_best_around(x, y, scores);
-         if (best)
+         if (best) {
            scores[y][x] = *best + 1;
+           res = true;
+         }
        }
      }
   }
+  return res;
 }
 
 
@@ -102,6 +111,8 @@ int main() {
      l.resize(map_size, '.');
      l[0] = l.back() = '#';
   }
+  // add # all around the map to ease the path finding later (no need to check
+  // for bounds, just stop when a # is found
   std::ranges::fill(map.front(), '#');
   std::ranges::fill(map.back(), '#');
 
@@ -109,23 +120,51 @@ int main() {
       auto&p = list[i];
       map[p.y + 1][p.x + 1] = '#';
   }
-  //map[map_size - 2][map_size - 2] = 'O';
   fmt::print("Map is:\n{}\n", fmt::join(map, "\n"));
 
-  Scores scores;
-  while(not scores[map_size - 2][map_size - 2])
-    diktra(map, scores);
+  { // p1
+    Scores scores;
+    while(not scores[map_size - 2][map_size - 2]) {
+      dijkstra(map, scores);
+    }
+    fmt::print("Size {}\n", scores[map_size - 2][map_size - 2]);
+  }
+  { // p2
 
+    // auto size = find_path(1, 1, 0, map, Pos{map_size - 2, map_size -2 });
+    //  fmt::print("Scores are:\n{}\n", fmt::join(scores, "\n"));
 
-// auto size = find_path(1, 1, 0, map, Pos{map_size - 2, map_size -2 });
-  fmt::print("Scores are:\n{}\n", fmt::join(scores, "\n"));
+    auto end = list.end();
+    auto begin = list.begin();
+    auto it = end;
 
-  for (auto&[y, mY] : scores)
-    for (auto&[x, s] : mY)
-       if (s) map[y][x] = (*s % 10) + '0';
-  fmt::print("Map is:\n{}\n", fmt::join(map, "\n"));
+    // dichotomy to find the elements that breaks the path
+    do {
+      auto test_map = map;
+      for (auto it2 = list.begin() + 1024; it2 != it; it2++) {
+        auto&p = *it2;
+        test_map[p.y + 1][p.x + 1] = '#';
+      }
+      Scores scores;
+      while(not scores[map_size - 2][map_size - 2]) {
+        auto changed = dijkstra(test_map, scores);
+        if (not changed) {
+          break;
+        }
+      }
 
-  fmt::print("Size {}\n", scores[map_size - 2][map_size - 2]);
+      auto good = scores[map_size - 2][map_size - 2].has_value();
+
+      fmt::print("====> {} {} {}\n", good, std::distance(list.begin(), it), std::distance(begin, end) );
+      begin = (good ? it : begin);
+      end = good ? end :it;
+      it = begin + std::distance(begin, end) / 2;
+      good = false;
+
+    } while(std::distance(begin, end) != 1);
+
+    fmt::print("First bad is: {},{}\n", begin->x, begin->y);
+  }
 }
 
 
