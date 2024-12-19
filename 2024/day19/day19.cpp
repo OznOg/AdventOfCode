@@ -1,6 +1,7 @@
 
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 #include <array>
@@ -18,24 +19,35 @@
 #include <ranges>
 #include <regex>
 
-
+// from https://github.com/faheel/BigInt
+#include <BigInt.hpp>
 
 using Patterns = std::map<unsigned char, std::set<std::string>>;
 using Towels = std::vector<std::string>;
 
-bool arrange(const std::string& towel, const Patterns& patterns) {
-  if (towel.size() == 0) return true;
+using History = std::map<std::string, BigInt>;
 
-  if (not patterns.contains(towel[0])) return false;
+BigInt arrange(const std::string& towel, const Patterns& patterns, History& h) {
+  if (towel.size() == 0) return 1;
+
+  if (h.contains(towel)) {
+    return h[towel];
+  }
+
+  if (not patterns.contains(towel[0])) {
+    h[towel] = 0;
+    return 0;
+  }
 
   auto &s = patterns.at(towel[0]); 
+  auto count = BigInt(0);
   for (auto p : s) {
     if (not towel.starts_with(p)) continue;
-    auto good = arrange(towel.substr(p.size(), std::string::npos), patterns);
-    if (good)
-      return good;
+    count += arrange(towel.substr(p.size(), std::string::npos), patterns, h);
   }
-  return false; 
+  
+  h[towel] = count;
+  return count; 
 }
 
 int main() {
@@ -61,13 +73,16 @@ int main() {
   fmt::print("patterns is:\n{}\n", patterns);
   fmt::print("Towels is:\n{}\n", towels);
 
-  unsigned long long count = 0u;
+  auto sum = BigInt(0);
+  History h;
   for (auto &t : towels) {
-     auto good = arrange(t, patterns);
-     fmt::print("Towel {} is {}\n", t, good);
-     if (good) count++; 
+     //fmt::print("Testing towel {}\n", t);
+     auto count = arrange(t, patterns, h);
+     fmt::print("Towel {} is {} : sum={}\n", t, fmt::streamed(count), fmt::streamed(sum));
+     sum += count; 
   }
-  fmt::print("Count is: {}\n", count);
+
+  fmt::print("Count is: {}\n", fmt::streamed(sum));
 }
 
 
