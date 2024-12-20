@@ -52,3 +52,5 @@ add_executable(day18 day18/day18.cpp)
 file(DOWNLOAD https://github.com/faheel/BigInt/releases/download/v0.5.0-dev/BigInt.hpp day19-dep/BigInt.hpp)
 add_executable(day19 day19/day19.cpp)
 target_include_directories(day19 PUBLIC ${CMAKE_BINARY_DIR}/day19-dep/)
+
+add_executable(day20 day20/day20.cpp)
