@@ -21,6 +21,7 @@
 
 struct Pos {
   long long x = 0, y = 0;
+  bool operator==(const Pos&) const = default;
   friend auto format_as(const Pos &p) {
     return fmt::format("(X={}, Y={})", p.x, p.y);
   }
@@ -28,139 +29,118 @@ struct Pos {
 
 using Map = std::vector<std::string>;
 
-using List = std::vector<Pos>;
+using Path = std::map<int, std::map<int, unsigned>>;
 
-using Scores = std::map<unsigned, std::map<unsigned, std::optional<unsigned>>>;
+std::optional<size_t> find_path(int x, int y, size_t score, Map& map, const Pos& end, Path &path) {
+  if (x == 0 or x == map[0].size() or y == 0 or y == map.size()) return {};
+  auto res = std::optional<size_t>{};
+  if (map[y][x] == '#' or map[y][x] == 'V') return {};
+  if (y == end.y && x == end.x) {
+    path[y][x] = score;
+    return score;
+  }
 
-// direct find_path, works on small maze but not on large one because it crawls
-// the whole map (and as the map has very large areas without walls)
-std::optional<size_t> find_path(int x, int y, size_t score, Map& map, const Pos& end, std::optional<Pos> cheat = {}, std::vector<unsigned> *cheat_score ={}) {
-    if (x == 0 or x == map[0].size() or y == 0 or y == map.size()) return {};
-    auto res = std::optional<size_t>{};
+  map[y][x] = 'V';
+  for (auto val : { find_path(x + 1, y, score + 1, map, end, path), 
+      find_path(x - 1, y, score + 1, map, end, path),
+      find_path(x, y + 1, score + 1, map, end, path),
+      find_path(x, y - 1, score + 1, map, end, path) }) {
+    if (not res) res = val;
+    if (res and val and *res > *val) res = val;
+  }
 
-    if (cheat and cheat->x == x and cheat->y == y) {
-        for (auto i : {-1, 1}) {
-           if (map[y][x + i] == '#') {
-             map[y][x + i] = '.';
-             auto val = find_path(x, y, score, map, end);
-             if (val) cheat_score->emplace_back(*val);
-             if (not res) res = val;
-             if (res and val and *res > *val){
-                res = val;
-             }
-             map[y][x + i] = '#';
-           }
-           if (map[y + i][x] == '#') {
-             map[y + i][x] = '.';
-             auto val = find_path(x, y, score, map, end);
-             if (val) cheat_score->emplace_back(*val);
-             if (not res) res = val;
-             if (res and val and *res > *val) res = val;
-             map[y + i][x] = '#';
-           }
-        }
-        return res;
-    }
-    
-   if (map[y][x] == '#' or map[y][x] == 'V') return {};
-   if (y == end.y && x == end.x) return score;
-
-   map[y][x] = 'V';
-   for (auto val : { find_path(x + 1, y, score + 1, map, end, cheat, cheat_score), 
-                       find_path(x - 1, y, score + 1, map, end, cheat, cheat_score),
-                       find_path(x, y + 1, score + 1, map, end, cheat, cheat_score),
-                       find_path(x, y - 1, score + 1, map, end, cheat, cheat_score) }) {
-       if (not res) res = val;
-       if (res and val and *res > *val) res = val;
-   }
-
-   map[y][x] = '.';
-   return res; 
+  map[y][x] = '.';
+  if (res) path[y][x] = score;
+  return res; 
 }
 
-auto find_best_around(int x, int y, Scores& scores) {
-   
-   auto res = std::optional<size_t>{};
-   for (auto &score : { scores[y][x + 1], scores[y][x - 1], scores[y + 1][x], scores[y - 1][x] }) {
-       if (not res) res = score;
-       if (res and score and *res > *score) res = score;
-   }
-   return res;
-}
+template<unsigned dist, unsigned cheat_duration>
+std::vector<Pos> find_path_around(const int& x, const int& y, unsigned score, const Path& path) {
+  auto res = std::vector<Pos>{};
+  for (auto i = 0; i <= dist; i++) {
+    for (auto j = 0; j + i <= dist ; j++) {
+       if (j == 0 and i == 0) continue;
+       auto x1 = x + i;
+       auto x2 = x - i;
+       auto y1 = y + j;
+       auto y2 = y - j;
 
-// This implementation works by updating values on a diagonal; As there may be
-// some places behind walls that are unreachable on first pass, this needs to
-// be called again and again until it returns false
-bool dijkstra(const Map& map, Scores& scores) {
-  scores[1][1] = 0;
-
-  auto res = false;
-  for (auto i = 1; i < map.size() * 2; i++) {
-     for (auto x = 0; x <= i; x++) {
-       auto y = i - x;
-       if (y >= map.size() or x >= map.size()) continue;
-       if (map[y][x] != '#' && not scores[y][x]) {
-         auto best = find_best_around(x, y, scores);
-         if (best) {
-           scores[y][x] = *best + 1;
-           res = true;
-         }
+       if (path.contains(y1) and path.at(y1).contains(x1) and path.at(y1).at(x1) >= score + i + j + cheat_duration) {
+           res.emplace_back(x1, y1);
        }
-     }
+       if (path.contains(y2) and path.at(y2).contains(x1) and path.at(y2).at(x1) >= score + i + j + cheat_duration) {
+           res.emplace_back(x1, y2);
+       }
+       if (path.contains(y1) and path.at(y1).contains(x2) and path.at(y1).at(x2) >= score + i + j + cheat_duration) {
+           res.emplace_back(x2, y1);
+       }
+       if (path.contains(y2) and path.at(y2).contains(x2) and path.at(y2).at(x2) >= score + i + j + cheat_duration) {
+           res.emplace_back(x2, y2);
+       }
+    }
   }
   return res;
 }
 
-
 int main() {
 
-  auto list = List{};
   auto input = std::string{};
   auto map = Map{};
   auto idx = 0;
   Pos start, end;
   while (getline(std::cin, input)) {
-      map.emplace_back(input);
       auto pos = input.find('S');
       if (pos != std::string::npos) {
         start.x = pos;
         start.y = idx;
+        input[pos] = '.';
       }
       pos = input.find('E');
       if (pos != std::string::npos) {
         end.x = pos;
         end.y = idx;
+        input[pos] = '.';
       }
+      map.emplace_back(input);
       idx++;
   }
   fmt::print("Map is:\n{}\n", fmt::join(map, "\n"));
+  fmt::print("Start is: {}\n", start);
+  fmt::print("End is: {}\n", end);
 
-
-  auto ref_size = find_path(start.x, start.y, 0, map, end);
-  fmt::print("Map is:\n{}\n", fmt::join(map, "\n"));
+  auto path = Path{};
+  auto ref_size = find_path(start.x, start.y, 0, map, end, path);
   fmt::print("size is:\n{}\n", ref_size);
-  //fmt::print("Scores are:\n{}\n", fmt::join(scores, "\n"));
-  //
-  auto track = std::vector<Pos>{};
-  auto nb_char = 0;
+//  fmt::print("Path is:\n{}\n", fmt::join(path, "\n"));
 
-  for (auto y= 0; y < map.size(); y++) {
-    for (auto x= 0; x < map[0].size(); x++) {
-         if (map[y][x] == '.') track.emplace_back(x, y);
+  { // p1
+    auto count = 0;
+    for (auto &[y, mX] : path) {
+      for (auto &[x, s] : mX) {
+        auto around = find_path_around<2, 100>(x, y, s, path);
+        std::ranges::sort(around, [](const auto &a, const auto &b) { return a.y < b.y or (a.y == b.y and a.x < b.x); });
+        around.erase(std::unique(around.begin(), around.end() ), around.end());
+
+        //fmt::print("for {} {} {}\n", x, y, around.size());
+        count += around.size();
+      }
     }
+    fmt::print("Count p1 is: {}\n", count);
   }
-  fmt::print("char is:\n{}\n", track.size());
+  { //p2
+    auto count = 0;
+    for (auto &[y, mX] : path) {
+      for (auto &[x, s] : mX) {
+        auto around = find_path_around<20, 100>(x, y, s, path);
+        std::ranges::sort(around, [](const auto &a, const auto &b) { return a.y < b.y or (a.y == b.y and a.x < b.x); });
+        around.erase(std::unique(around.begin(), around.end() ), around.end());
 
-  auto count = 0;
-  for (auto t: track) {
-    fmt::print("Testing : {}\n", t);
-     
-     std::vector<unsigned> cs;
-     find_path(start.x, start.y, 0, map, end, t, &cs);
-     for (auto &val : cs)
-       if (val + 100 <= ref_size) count++;
+        //fmt::print("for {} {} {}\n", x, y, around.size());
+        count += around.size();
+      }
+    }
+    fmt::print("Count p2 is: {}\n", count);
   }
-  fmt::print("Count is:\n{}\n", count);
 }
 
 
