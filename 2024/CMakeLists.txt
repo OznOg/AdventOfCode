@@ -54,3 +54,5 @@ add_executable(day19 day19/day19.cpp)
 target_include_directories(day19 PUBLIC ${CMAKE_BINARY_DIR}/day19-dep/)
 
 add_executable(day20 day20/day20.cpp)
+
+add_executable(day21 day21/day21.cpp)
