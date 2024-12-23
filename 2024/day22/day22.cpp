@@ -36,7 +36,9 @@ auto compute_changes(const Seeds& prices) {
    // all done using 'p' as 0 and other relative to 'p'
    auto prev = prices[0];
    for (auto i = 1; i < prices.size(); i++) {
-       changes += 'p' + ((char)prices[i] - (char)prev); 
+       auto change = ((char)prices[i] - (char)prev);
+       auto val = change >= 0 ? ('0' + change) : ('a' - change);
+       changes += val; 
        prev = prices[i];
    }
    return changes;
@@ -45,14 +47,44 @@ auto compute_changes(const Seeds& prices) {
 using Indexes = std::map<std::string, std::vector<unsigned>>;
 
 
-auto find_indexes(const std::string& all, size_t pos, Indexes& indexes) {
-      auto pattern = all.substr(0, 4);
-      if (indexes.contains(pattern)) return;
-
-      for (auto i = all.find(pattern); i != std::string::npos; i = all.find(pattern, i + 1)) {
-          indexes[pattern].emplace_back(i + pos); 
+auto find_indexes(const std::string& pattern, const std::string& changes, const Seeds& prices) {
+      unsigned long long bananas = 0;
+      for (auto i = changes.find(pattern); i != std::string::npos; i = changes.find(pattern, i + 1)) {
+          bananas += prices[i + 4];
+          break; // only on first seen
       }
-      find_indexes(all.substr(1, std::string::npos), 1, indexes);
+      return bananas;
+}
+
+auto find_in_all_indexes(const std::string& pattern, const std::vector<Seeds>& all_prices, const std::vector<std::string> &all_changes) {
+    unsigned long long bananas = 0;
+    for (auto i = 0; i < all_prices.size(); i++) {
+        bananas += find_indexes(pattern, all_changes[i], all_prices[i]);
+    }
+    //fmt::print("pattern {} bananas: {}\n", pattern, bananas);
+    return bananas;
+}
+
+auto compute(const std::vector<Seeds>& all_prices, const std::vector<std::string> & all_changes) {
+
+    unsigned long long best_bananas = 0;
+    auto best_pattern = std::string{};
+
+    auto indexes = Indexes{};
+
+    for (auto &changes : all_changes) {
+        for (auto i = 0; i < changes.size() -4; i++) {
+            auto pattern = changes.substr(i, 4);
+            if (indexes.contains(pattern)) continue;
+            auto bananas = find_in_all_indexes(pattern, all_prices, all_changes);
+            indexes[pattern] = {};
+            if (bananas > best_bananas) {
+                best_bananas = bananas;
+                best_pattern = pattern;
+            }
+        }
+    }
+    return best_bananas; 
 }
 
 int main() {
@@ -65,6 +97,7 @@ int main() {
   fmt::print("Seed are:\n{}\n", seeds);
 
   unsigned long long sum = 0;
+  auto all_prices = std::vector<Seeds>{};
   for (auto s : seeds) {
       auto res = s;
       auto prices = Seeds{s % 10};
@@ -72,17 +105,24 @@ int main() {
           res = evolve(res, it); 
           prices.emplace_back(res % 10);
       }
-      //fmt::print("Prices: {}\n", prices);
-      auto changes = compute_changes(prices);
-      //fmt::print("Changes: {}\n", changes);
-      //fmt::print("{}: {}\n", s, res);
-      Indexes indexes;
-      find_indexes(changes, 0, indexes);
-      fmt::print("indexes: {}\n", indexes);
-
+      all_prices.emplace_back(prices);
       sum += res;
   }
   fmt::print("Sum is: {}\n", sum);
+
+  auto all_changes = std::vector<std::string>{};
+  for (auto &prices : all_prices) {
+      //fmt::print("Prices: {}\n", prices);
+      auto changes = compute_changes(prices);
+      all_changes.emplace_back(changes);
+      //fmt::print("changes {}\n", changes);
+      //auto bana = find_indexes(changes, prices)
+      //fmt::print("bana: {}\n", bana);
+  }
+
+  auto bananas = compute(all_prices, all_changes);
+
+  fmt::print("bananas: {}\n", bananas);
 }
 
 
