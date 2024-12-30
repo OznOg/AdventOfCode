@@ -53,6 +53,32 @@ auto find_inter_connected(const List& list) {
     return res;
 }
 
+
+bool clique_is_in_nodes(const std::set<std::string>& clique, const std::set<std::string>& nodes) {
+    for (auto &n : clique) {
+        if (not nodes.contains(n)) return false;
+    }
+    return true;
+}
+
+auto find_max(const List &list) {
+
+    std::set<std::string> best_clique;
+    auto test_list = list;
+    while (not test_list.empty()) {
+        std::set<std::string> clique;
+        for (auto &[p2, l2]  : test_list) {
+            if (clique_is_in_nodes(clique, l2))
+                clique.insert(p2);  
+        }
+        if (best_clique.size() < clique.size())
+            best_clique = clique;
+        test_list.erase(test_list.begin());
+    }
+    return best_clique;
+}
+
+
 int main() {
 
     auto list = List{};
@@ -76,4 +102,7 @@ int main() {
         if ((*it)[0] == 't' or (*std::next(it))[0] == 't' or (*std::next(it, 2))[0] == 't') sum++;
     }
     fmt::print("Sum is: {}\n", sum);
+
+    auto best = find_max(list);
+    fmt::print("Best clique is:\n{}\n{}\n", fmt::join(best, ","), best.size());
 }
